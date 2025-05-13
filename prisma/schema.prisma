@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum definitions
+enum Role {
+  USER
+  ADMIN
+}
+
+enum HousingType {
+  PRIVATE_HOUSE
+  COMPANY
+}
+
+// Models
+model Categories {
+  id            Int           @id @default(autoincrement())
+  category_name String        @db.VarChar(100)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  products      Products[]    @relation("CategoryProducts")
+}
+
+model Products {
+  id                  Int           @id @default(autoincrement())
+  name                String        @db.VarChar(100)
+  price               Decimal       @db.Decimal(10,2)
+  size                String?       @db.VarChar(10)
+  color               String?       @db.VarChar(50)
+  description         String?
+  category_id         Int
+  discount_percentage Decimal       @db.Decimal(5,2) @default(0.00)
+  category            Categories    @relation("CategoryProducts", fields: [category_id], references: [id])
+  inventories         StoreInventory[] @relation("ProductInventory")
+  order_items         OrderItems[]  @relation("ProductOrderItems")
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+}
+
+model Stores {
+  id          Int           @id @default(autoincrement())
+  store_name  String        @db.VarChar(100)
+  address     String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  inventories StoreInventory[] @relation("StoreInventory")
+}
+
+model StoreInventory {
+  id         Int      @id @default(autoincrement())
+  store_id   Int
+  product_id Int
+  quantity   Int
+  store      Stores   @relation("StoreInventory", fields: [store_id], references: [id])
+  product    Products @relation("ProductInventory", fields: [product_id], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Users {
+  id            Int           @id @default(autoincrement())
+  name          String        @db.VarChar(100)
+  email         String        @unique @db.VarChar(100)
+  phone         String        @db.VarChar(20)
+  province      String        @db.VarChar(100)
+  district      String        @db.VarChar(100)
+  commune       String        @db.VarChar(100)
+  address       String        @db.VarChar(255)
+  housing_type  HousingType
+  password      String
+  refreshToken  String?
+  role          Role          @default(USER)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  vouchers      UserVouchers[] @relation("UserVoucher")
+  orders        Orders[]      @relation("UserOrders")
+}
+
+model Vouchers {
+  id             Int           @id @default(autoincrement())
+  code           String        @unique @db.VarChar(50)
+  discount_amount Decimal?     @db.Decimal(10,2)
+  description    String?
+  expiry_date    DateTime
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user_vouchers  UserVouchers[] @relation("UserVoucher")
+}
+
+model UserVouchers {
+  id        Int      @id @default(autoincrement())
+  user_id   Int
+  voucher_id Int
+  is_used   Boolean  @default(false)
+  user      Users    @relation("UserVoucher", fields: [user_id], references: [id])
+  voucher   Vouchers @relation("UserVoucher", fields: [voucher_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Orders {
+  id                 Int          @id @default(autoincrement())
+  user_id            Int
+  order_date         DateTime     @default(now())
+  total_price        Decimal?     @db.Decimal(10,2)
+  status             String       @db.VarChar(20)
+  gender             String       @db.VarChar(20)
+  shipping_method    String       @db.VarChar(50)
+  payment_method     String       @db.VarChar(50)
+  shipping_fee       Decimal      @db.Decimal(10,2) @default(0.00)
+  discount           Decimal      @db.Decimal(10,2) @default(0.00)
+  housing_type       String       @db.VarChar(50)
+  address            String
+  email              String       @db.VarChar(100)
+  phone              String       @db.VarChar(20)
+  recipient_name     String       @db.VarChar(100)
+  is_not_self_recipient Boolean   @default(false)
+  user               Users        @relation("UserOrders", fields: [user_id], references: [id])
+  order_items        OrderItems[] @relation("OrderOrderItems")
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model OrderItems {
+  id            Int      @id @default(autoincrement())
+  order_id      Int
+  product_id    Int
+  quantity      Int
+  unit_price    Decimal  @db.Decimal(10,2)
+  discount      Decimal  @db.Decimal(10,2) @default(0.00)
+  order         Orders   @relation("OrderOrderItems", fields: [order_id], references: [id])
+  product       Products @relation("ProductOrderItems", fields: [product_id], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
