@@ -80,7 +80,7 @@ export class RegisterUserDto {
 export class UserLoginDto {
     @IsString()
     @IsNotEmpty()
-    @ApiProperty({ example: 'user@gmail.com | admin@gmail.com' })
+    @ApiProperty({ example: 'gu@gmail.com' })
     username: string;
 
     @IsString()
