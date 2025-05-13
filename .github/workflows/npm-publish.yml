@@ -36,7 +36,7 @@ jobs:
             docker rm assessment || true
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/assessment:latest
             docker run -d --name assessment \
-              -p 8000:8000 \
+              -p 8001:8001 \
               -e PORT=${{ secrets.PORT }} \
               -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
               -e JWT_ACCESS_TOKEN=${{ secrets.JWT_ACCESS_TOKEN }} \
